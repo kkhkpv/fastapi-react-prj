@@ -71,3 +71,19 @@ async def create_contact(user: schemas.User, db: orm.Session, contact: schemas.C
     db.commit()
     db.refresh(contact)
     return schemas.Contact.from_orm(contact)
+
+
+async def get_contacts(user: schemas.User, db: orm.Session):
+    contacts = db.query(models.Contact).filter_by(owner_id=user.id)
+
+    return list(map(schemas.Contact.from_orm, contacts))
+
+
+async def get_contact_by_id(id: int, user: schemas.User, db: orm.Session):
+    contact = db.query(models.Contact).filter_by(
+        owner_id=user.id).filter(models.Contact.id == id).first()
+
+    if contact is None:
+        raise HTTPException(status_code=404, detail="Contact doesn't exist")
+
+    return contact

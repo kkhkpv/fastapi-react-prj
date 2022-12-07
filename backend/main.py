@@ -40,4 +40,12 @@ async def get_user(user: schemas.User = Depends(services.get_current_user)):
 async def create_contact(contact: schemas.ContactCreate, user: schemas.User = Depends(services.get_current_user), db: orm.Session = Depends(services.get_db)):
     return await services.create_contact(user, db, contact)
 
+
 @app.get("/api/contacts", response_model=list[schemas.Contact])
+async def get_contacts(user: schemas.User = Depends(services.get_current_user), db: orm.Session = Depends(services.get_db)):
+    return await services.get_contacts(user, db)
+
+
+@app.get("/api/contacts/{id}", status_code=200)
+async def get_contact_by_id(id: int, user: schemas.User = Depends(services.get_current_user), db: orm.Session = Depends(services.get_db)):
+    pass
