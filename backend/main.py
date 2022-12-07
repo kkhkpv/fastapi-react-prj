@@ -1,18 +1,43 @@
-from fastapi import FastAPI, Depends, HTTPException
-import fastapi.security as security
+from fastapi import FastAPI, Depends, HTTPException, security
 
 import sqlalchemy.orm as orm
 
-from services import *
+import services
 
-from schemas import *
+import schemas
 
 app = FastAPI()
 
 
 @app.post("/api/users")
-async def create_user(user: UserCreate, db: orm.Session = Depends(get_db)):
-    db_user = get_user_by_email(user.email, db)
+async def create_user(user: schemas.UserCreate, db: orm.Session = Depends(services.get_db)):
+    db_user = await services.get_user_by_email(user.email, db)
     if db_user:
         raise HTTPException(
             status_code=400, detail="User with this email already exists")
+
+    await services.create_user(user, db)
+
+    return await services.create_token(user)
+
+
+@app.post("/api/token")
+async def generate_token(form_data: security.OAuth2PasswordRequestForm = Depends(), db: orm.Session = Depends(services.get_db)):
+    user = await services.authenticate_user(form_data.username, form_data.password, db)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid creds")
+
+    return await services.create_token(user)
+
+
+@app.get("/api/users/me", response_model=schemas.User)
+async def get_user(user: schemas.User = Depends(services.get_current_user)):
+    return user
+
+
+@app.post("/api/contacts", response_model=schemas.Contact)
+async def create_contact(contact: schemas.ContactCreate, user: schemas.User = Depends(services.get_current_user), db: orm.Session = Depends(services.get_db)):
+    return await services.create_contact(user, db, contact)
+
+@app.get("/api/contacts", response_model=list[schemas.Contact])

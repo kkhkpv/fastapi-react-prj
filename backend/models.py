@@ -4,10 +4,10 @@ import sqlalchemy as sql
 import sqlalchemy.orm as orm
 import passlib.hash as hash
 
-import database as db
+import database
 
 
-class User(db.Base):
+class User(database.Base):
     __tablename__ = "users"
     id = sql.Column(sql.Integer, primary_key=True, index=True)
     email = sql.Column(sql.String, unique=True, index=True)
@@ -19,7 +19,7 @@ class User(db.Base):
         return hash.bcrypt.verify(password, self.hashed_password)
 
 
-class Contact(db.Base):
+class Contact(database.Base):
     __tablename__ = "contacts"
     id = sql.Column(sql.Integer, primary_key=True, index=True)
     owner_id = sql.Column(sql.Integer, sql.ForeignKey("users.id"))
