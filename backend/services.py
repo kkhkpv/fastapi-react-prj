@@ -79,7 +79,7 @@ async def get_contacts(user: schemas.User, db: orm.Session):
     return list(map(schemas.Contact.from_orm, contacts))
 
 
-async def get_contact_by_id(id: int, user: schemas.User, db: orm.Session):
+async def select_contact_by_id(id: int, user: schemas.User, db: orm.Session):
     contact = db.query(models.Contact).filter_by(
         owner_id=user.id).filter(models.Contact.id == id).first()
 
@@ -87,3 +87,30 @@ async def get_contact_by_id(id: int, user: schemas.User, db: orm.Session):
         raise HTTPException(status_code=404, detail="Contact doesn't exist")
 
     return contact
+
+
+async def get_contact_by_id(id: int, user: schemas.User, db: orm.Session):
+    contact = await select_contact_by_id(id, user, db)
+    return schemas.Contact.from_orm(contact)
+
+
+async def delete_contact(id: int, user: schemas.User, db: orm.Session):
+    contact = await select_contact_by_id(id, user, db)
+
+    db.delete(contact)
+    db.commit()
+
+
+async def update_contact(id: int, contact: schemas.ContactCreate, user: schemas.User, db: orm.Session):
+    contact_to_update = await select_contact_by_id(id, user, db)
+
+    contact_to_update.first_name = contact.first_name
+    contact_to_update.last_name = contact.last_name
+    contact_to_update.address = contact.address
+    contact_to_update.email = contact.email
+    contact_to_update.phone_number = contact.phone_number
+
+    db.commit()
+    db.refresh(contact_to_update)
+
+    return schemas.Contact.from_orm(contact_to_update)
