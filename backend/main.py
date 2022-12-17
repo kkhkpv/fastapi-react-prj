@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, security
-
+from fastapi.middleware.cors import CORSMiddleware
 import sqlalchemy.orm as orm
 
 import services
@@ -7,6 +7,19 @@ import services
 import schemas
 
 app = FastAPI()
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/api/users")
@@ -16,7 +29,7 @@ async def create_user(user: schemas.UserCreate, db: orm.Session = Depends(servic
         raise HTTPException(
             status_code=400, detail="User with this email already exists")
 
-    await services.create_user(user, db)
+    user = await services.create_user(user, db)
 
     return await services.create_token(user)
 
@@ -61,3 +74,8 @@ async def delete_contact(id: int, user: schemas.User = Depends(services.get_curr
 async def update_contact(id: int, contact: schemas.ContactCreate, user: schemas.User = Depends(services.get_current_user), db: orm.Session = Depends(services.get_db)):
     await services.update_contact(id, contact, user, db)
     return {"message", "updated"}
+
+
+@app.get("/api")
+async def root():
+    return {"message": "Welcome to contacts manager"}
